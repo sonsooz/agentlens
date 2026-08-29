@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentLens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1220;
+    --panel:#101A2C;
+    --panel-2:#141F35;
+    --border:#1E2C44;
+    --text:#E8EDF5;
+    --muted:#7C8AA0;
+    --cyan:#5EEAD4;
+    --amber:#FFB454;
+    --red:#FF6B6B;
+    --violet:#A78BFA;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Space Grotesk',sans-serif;
+    height:100vh;
+    overflow:hidden;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  .app{display:flex;height:100vh;}
+
+  /* Sidebar */
+  .sidebar{
+    width:300px;
+    min-width:300px;
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    background:var(--panel);
+  }
+  .brand{
+    padding:20px 20px 16px;
+    border-bottom:1px solid var(--border);
+  }
+  .brand .logo{
+    display:flex;align-items:center;gap:10px;
+    font-weight:700;font-size:18px;letter-spacing:-0.02em;
+  }
+  .brand .dot{
+    width:10px;height:10px;border-radius:50%;
+    background:var(--cyan);
+    box-shadow:0 0 10px var(--cyan);
+    animation:pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{opacity:1;transform:scale(1);}
+    50%{opacity:.5;transform:scale(0.8);}
+  }
+  .brand .tagline{color:var(--muted);font-size:12px;margin-top:4px;}
+
+  .stats-row{
+    display:grid;grid-template-columns:1fr 1fr;
+    gap:1px;background:var(--border);
+    border-bottom:1px solid var(--border);
+  }
+  .stat{background:var(--panel);padding:12px 16px;}
+  .stat .n{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600;}
+  .stat .l{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-top:2px;}
+
+  .runs-header{
+    padding:14px 20px 8px;
+    color:var(--muted);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+  }
+  .runs-list{flex:1;overflow-y:auto;padding:0 8px 12px;}
+  .run-item{
+    padding:12px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    margin-bottom:2px;
+    border:1px solid transparent;
+  }
+  .run-item:hover{background:var(--panel-2);}
+  .run-item.active{background:var(--panel-2);border-color:var(--border);}
+  .run-item .top{display:flex;justify-content:space-between;align-items:center;}
+  .run-item .rid{font-family:'JetBrains Mono',monospace;font-size:13px;}
+  .run-item .badge{
+    font-size:10px;padding:2px 6px;border-radius:4px;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .badge.ok{background:rgba(94,234,212,.12);color:var(--cyan);}
+  .badge.err{background:rgba(255,107,107,.12);color:var(--red);}
+  .badge.live{background:rgba(255,180,84,.12);color:var(--amber);}
+  .run-item .agents{color:var(--muted);font-size:11px;margin-top:4px;}
+  .run-item .time{color:var(--muted);font-size:10px;margin-top:4px;font-family:'JetBrains Mono',monospace;}
+
+  /* Main */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0;}
+  .main-header{
+    padding:20px 28px;
+    border-bottom:1px solid var(--border);
+    display:flex;justify-content:space-between;align-items:baseline;
+  }
+  .main-header h1{font-size:16px;margin:0;font-weight:600;}
+  .main-header .sub{color:var(--muted);font-size:12px;font-family:'JetBrains Mono',monospace;}
+
+  .timeline-wrap{flex:1;overflow-y:auto;padding:24px 28px;}
+  .empty{
+    height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:var(--muted);gap:8px;text-align:center;
+  }
+  .empty .big{font-size:14px;color:var(--text);}
+  .empty code{
+    background:var(--panel-2);border:1px solid var(--border);
+    padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:12px;
+  }
+
+  .agent-track{margin-bottom:28px;}
+  .agent-track .head{
+    display:flex;align-items:center;gap:8px;margin-bottom:10px;
+  }
+  .agent-track .swatch{width:8px;height:8px;border-radius:2px;background:var(--violet);}
+  .agent-track .name{font-weight:600;font-size:13px;}
+  .agent-track .count{color:var(--muted);font-size:11px;font-family:'JetBrains Mono',monospace;}
+
+  .track{
+    position:relative;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px 20px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .track::before{
+    content:'';
+    position:absolute;left:28px;top:16px;bottom:16px;
+    width:2px;background:var(--border);
+  }
+  .tick{
+    position:relative;
+    padding-left:28px;
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+  }
+  .tick .marker{
+    position:absolute;left:-1px;top:4px;
+    width:10px;height:10px;border-radius:50%;
+    background:var(--panel);border:2px solid var(--muted);
+    z-index:1;
+  }
+  .tick.success .marker{border-color:var(--cyan);background:var(--cyan);}
+  .tick.error .marker{border-color:var(--red);background:var(--red);}
+  .tick.handoff .marker{border-color:var(--amber);background:var(--amber);}
+  .tick.lifecycle .marker{border-color:var(--violet);background:var(--violet);}
+
+  .tick .body{flex:1;min-width:0;}
+  .tick .row1{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .tick .ename{font-weight:600;font-size:13px;}
+  .tick.error .ename{color:var(--red);}
+  .tick.handoff .ename{color:var(--amber);}
+  .tick .dur{
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);
+    background:var(--panel-2);padding:1px 6px;border-radius:4px;
+  }
+  .tick .ts{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);}
+  .tick .detail{
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);
+    margin-top:4px;white-space:pre-wrap;word-break:break-word;
+    max-height:0;overflow:hidden;transition:max-height .15s ease;
+  }
+  .tick.expanded .detail{max-height:400px;}
+  .tick{cursor:pointer;}
+  .tick:hover .ename{text-decoration:underline;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="brand">
+      <div class="logo"><span class="dot"></span> AgentLens</div>
+      <div class="tagline">flight recorder for AI agents</div>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><div class="n mono" id="stat-runs">–</div><div class="l">Runs</div></div>
+      <div class="stat"><div class="n mono" id="stat-agents">–</div><div class="l">Agents</div></div>
+      <div class="stat"><div class="n mono" id="stat-errors">–</div><div class="l">Errors</div></div>
+      <div class="stat"><div class="n mono" id="stat-events">–</div><div class="l">Events</div></div>
+    </div>
+    <div class="runs-header">Recent runs</div>
+    <div class="runs-list" id="runs-list"></div>
+  </div>
+
+  <div class="main">
+    <div class="main-header">
+      <h1 id="main-title">Select a run</h1>
+      <div class="sub" id="main-sub"></div>
+    </div>
+    <div class="timeline-wrap" id="timeline-wrap">
+      <div class="empty">
+        <div class="big">No run selected yet</div>
+        <div>Instrument your agent with the SDK, then it'll show up here live:</div>
+        <code>pip install -e ./sdk &amp;&amp; export AGENTLENS_ENDPOINT=http://localhost:8420</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin.includes('8420') ? window.location.origin : 'http://localhost:8420';
+let currentRun = null;
+let currentProject = 'default';
+
+async function fetchJSON(path){
+  const res = await fetch(API + path);
+  return res.json();
+}
+
+function timeAgo(ts){
+  const s = Math.max(0, (Date.now()/1000) - ts);
+  if(s < 60) return Math.floor(s) + 's ago';
+  if(s < 3600) return Math.floor(s/60) + 'm ago';
+  return Math.floor(s/3600) + 'h ago';
+}
+
+async function refreshStats(){
+  try{
+    const s = await fetchJSON('/api/stats?project=' + currentProject);
+    document.getElementById('stat-runs').textContent = s.total_runs ?? 0;
+    document.getElementById('stat-agents').textContent = s.total_agents ?? 0;
+    document.getElementById('stat-errors').textContent = s.total_errors ?? 0;
+    document.getElementById('stat-events').textContent = s.total_events ?? 0;
+  }catch(e){}
+}
+
+async function refreshRuns(){
+  try{
+    const runs = await fetchJSON('/api/runs?project=' + currentProject);
+    const list = document.getElementById('runs-list');
+    list.innerHTML = '';
+    runs.forEach(r => {
+      const div = document.createElement('div');
+      div.className = 'run-item' + (r.run_id === currentRun ? ' active' : '');
+      const badge = r.error_count > 0
+        ? '<span class="badge err">' + r.error_count + ' err</span>'
+        : (r.finished > 0 ? '<span class="badge ok">done</span>' : '<span class="badge live">live</span>');
+      div.innerHTML = `
+        <div class="top"><span class="rid">${r.run_id}</span>${badge}</div>
+        <div class="agents">${(r.agents||'').split(',').join(' → ')}</div>
+        <div class="time">${timeAgo(r.last_activity)}</div>
+      `;
+      div.onclick = () => selectRun(r.run_id);
+      list.appendChild(div);
+    });
+  }catch(e){}
+}
+
+function fmtData(data){
+  try{
+    return JSON.stringify(data, null, 2);
+  }catch(e){return String(data);}
+}
+
+async function selectRun(runId){
+  currentRun = runId;
+  refreshRuns();
+  const data = await fetchJSON('/api/runs/' + runId);
+  document.getElementById('main-title').textContent = 'Run ' + runId;
+  const events = data.events;
+  const agents = {};
+  events.forEach(e => {
+    if(!agents[e.agent]) agents[e.agent] = [];
+    agents[e.agent].push(e);
+  });
+  document.getElementById('main-sub').textContent = events.length + ' events · ' + Object.keys(agents).length + ' agent(s)';
+
+  const wrap = document.getElementById('timeline-wrap');
+  wrap.innerHTML = '';
+
+  Object.entries(agents).forEach(([agentName, evs]) => {
+    const track = document.createElement('div');
+    track.className = 'agent-track';
+    track.innerHTML = `<div class="head"><span class="swatch"></span><span class="name">${agentName}</span><span class="count">${evs.length} events</span></div>`;
+    const trackBody = document.createElement('div');
+    trackBody.className = 'track';
+
+    evs.forEach(e => {
+      const tick = document.createElement('div');
+      let cls = 'lifecycle';
+      let label = e.type;
+      let detail = '';
+
+      if(e.type === 'step_end'){ cls = 'success'; label = e.data.name || 'step'; }
+      else if(e.type === 'step_error' || e.type === 'error'){ cls = 'error'; label = (e.data.name || 'error') + ' failed'; }
+      else if(e.type === 'handoff'){ cls = 'handoff'; label = 'handoff → ' + (e.data.to_agent || '?'); }
+      else if(e.type === 'run_start'){ cls = 'lifecycle'; label = 'run started'; }
+      else if(e.type === 'run_end'){ cls = 'lifecycle'; label = 'run ended (' + (e.data?.data?.status || 'completed') + ')'; }
+      else if(e.type === 'step_start'){ return; } // skip, paired with step_end
+
+      tick.className = 'tick ' + cls;
+      const dur = e.data && e.data.duration_ms ? `<span class="dur">${e.data.duration_ms}ms</span>` : '';
+      tick.innerHTML = `
+        <div class="marker"></div>
+        <div class="body">
+          <div class="row1">
+            <span class="ename">${label}</span>
+            ${dur}
+            <span class="ts">${new Date(e.ts*1000).toLocaleTimeString()}</span>
+          </div>
+          <div class="detail mono">${fmtData(e.data)}</div>
+        </div>
+      `;
+      tick.onclick = () => tick.classList.toggle('expanded');
+      trackBody.appendChild(tick);
+    });
+
+    track.appendChild(trackBody);
+    wrap.appendChild(track);
+  });
+}
+
+async function poll(){
+  await refreshStats();
+  await refreshRuns();
+  if(currentRun) await selectRun(currentRun);
+}
+
+poll();
+setInterval(poll, 2500);
+</script>
+</body>
+</html>
