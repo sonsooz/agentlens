@@ -9,6 +9,7 @@ dashboard as a timeline per agent / per run.
 from __future__ import annotations
 
 import functools
+import os
 import time
 import traceback
 import uuid
@@ -19,10 +20,22 @@ from typing import Any, Callable, Optional
 import requests
 
 
+def _default_endpoint() -> str:
+    return os.environ.get("AGENTLENS_ENDPOINT", "http://localhost:8420")
+
+
+def _default_project() -> str:
+    return os.environ.get("AGENTLENS_PROJECT", "default")
+
+
 @dataclass
 class AgentLensConfig:
-    endpoint: str = "http://localhost:8420"
-    project: str = "default"
+    # Reads AGENTLENS_ENDPOINT / AGENTLENS_PROJECT from the environment at
+    # construction time if you don't pass explicit values — so
+    # `export AGENTLENS_ENDPOINT=...` (or `$env:AGENTLENS_ENDPOINT = ...`
+    # on PowerShell) actually takes effect without editing code.
+    endpoint: str = field(default_factory=_default_endpoint)
+    project: str = field(default_factory=_default_project)
     timeout: float = 2.0
     # If True, network errors instrumenting your app never raise —
     # observability must never crash the thing it's observing.

@@ -214,7 +214,10 @@
 </div>
 
 <script>
-const API = window.location.origin.includes('8420') ? window.location.origin : 'http://localhost:8420';
+// The dashboard is always served by the same backend whose API it calls,
+// whether that's http://localhost:8420 in local dev or a production
+// domain like Railway's — so just use the origin the page loaded from.
+const API = window.location.origin;
 let currentRun = null;
 let currentProject = 'default';
 
