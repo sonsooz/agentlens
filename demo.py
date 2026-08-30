@@ -9,6 +9,7 @@ Then open http://localhost:8420/dashboard in your browser.
 """
 
 import random
+import os
 import sys
 import time
 from pathlib import Path
@@ -17,7 +18,8 @@ sys.path.insert(0, str(Path(__file__).parent / "sdk"))
 
 from agentlens import AgentLens, AgentLensConfig
 
-config = AgentLensConfig(endpoint="http://localhost:8420", project="demo")
+config = AgentLensConfig(project=os.environ.get("AGENTLENS_PROJECT", "demo"))
+print(f"Sending demo events to: {config.endpoint}")
 run_id = f"demo-{random.randint(1000, 9999)}"
 
 researcher = AgentLens("researcher", run_id=run_id, config=config)
@@ -51,4 +53,4 @@ with writer.step("polish_tone", style="concise") as s:
 
 writer.finish(status="completed", output_length=340)
 
-print(f"Demo run '{run_id}' sent. Open http://localhost:8420/dashboard and select it.")
+print(f"Demo run '{run_id}' sent. Open {config.endpoint}/dashboard and select project '{config.project}'.")
