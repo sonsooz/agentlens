@@ -8,6 +8,7 @@ Run:
 """
 
 import json
+import os
 import sqlite3
 import time
 from pathlib import Path
@@ -18,7 +19,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-DB_PATH = Path(__file__).parent / "agentlens.db"
+# On Railway (or any host with ephemeral container storage), the container
+# filesystem is wiped on every redeploy — so the SQLite file must live on a
+# mounted persistent volume, not next to the code. Set AGENTLENS_DB_PATH to
+# that volume's path (e.g. /data/agentlens.db) in production; it defaults to
+# a local file for plain local development.
+DB_PATH = Path(os.environ.get("AGENTLENS_DB_PATH", str(Path(__file__).parent / "agentlens.db")))
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="AgentLens API")
 
