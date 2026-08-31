@@ -194,7 +194,7 @@
       <div class="stat"><div class="n mono" id="stat-errors">–</div><div class="l">Errors</div></div>
       <div class="stat"><div class="n mono" id="stat-events">–</div><div class="l">Events</div></div>
     </div>
-    <div class="runs-header">Recent runs</div>
+    <div class="runs-header">Recent runs <span id="project-label" class="mono" style="color:var(--muted); text-transform:none;"></span></div>
     <div class="runs-list" id="runs-list"></div>
   </div>
 
@@ -224,6 +224,19 @@ let currentProject = 'default';
 async function fetchJSON(path){
   const res = await fetch(API + path);
   return res.json();
+}
+
+async function detectProject(){
+  // The dashboard used to assume project='default', but the demo script
+  // (and most real usage) sends events under whatever AGENTLENS_PROJECT
+  // is set to — so pick the first project that actually has data instead
+  // of silently showing an empty dashboard.
+  try{
+    const projects = await fetchJSON('/api/projects');
+    if(projects && projects.length > 0 && !projects.includes(currentProject)){
+      currentProject = projects[0];
+    }
+  }catch(e){}
 }
 
 function timeAgo(ts){
@@ -330,6 +343,8 @@ async function selectRun(runId){
 }
 
 async function poll(){
+  await detectProject();
+  document.getElementById('project-label').textContent = '(' + currentProject + ')';
   await refreshStats();
   await refreshRuns();
   if(currentRun) await selectRun(currentRun);
