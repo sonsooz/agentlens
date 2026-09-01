@@ -1,3 +1,5 @@
+> Lightweight observability for multi-agent AI systems — see every decision, tool call, handoff, and failure across your agents, live.
+
 # AgentLens
 
 Lightweight observability for multi-agent AI systems. Drop a few lines into
